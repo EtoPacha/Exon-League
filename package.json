@@ -1,0 +1,16 @@
+{
+  "name": "exon-league",
+  "version": "1.0.0",
+  "description": "Exon League Discord Bot",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "sen",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "quick.db": "^9.1.6",
+    "better-sqlite3": "^9.4.0"
+  }
+}
