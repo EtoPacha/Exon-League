@@ -105,5 +105,4 @@ client.on("messageCreate", async (message) => {
 
 });
 
-// TOKEN BURAYA
 client.login(process.env.TOKEN);
