@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
+const { Client, GatewayIntentBits } = require("discord.js");
 const db = require("quick.db");
 
 const client = new Client({
@@ -12,7 +12,7 @@ const client = new Client({
 const prefix = "!";
 
 // BOT AÇILDI
-client.once("ready", () => {
+client.on("ready", () => {
   console.log(`${client.user.tag} aktif!`);
 });
 
@@ -24,85 +24,75 @@ client.on("messageCreate", async (message) => {
   const args = message.content.slice(prefix.length).trim().split(/ +/);
   const cmd = args.shift().toLowerCase();
 
-  // =========================
-  // 💼 BAKİYE KOMUTU
-  // =========================
-  if (cmd === "bakiye") {
+  // 💰 PARA GÖR
+  if (cmd === "para") {
+    let para = db.get(`para_${message.author.id}`) || 0;
+    let banka = db.get(`bank_${message.author.id}`) || 0;
 
-    let user = message.author;
-
-    let cüzdan = db.get(`money_${user.id}`) || 0;
-    let banka = db.get(`bank_${user.id}`) || 0;
-    let toplam = cüzdan + banka;
-
-    const embed = new EmbedBuilder()
-      .setColor("#2b2d31")
-      .setTitle("💼 Bakiye Bilgisi")
-      .setThumbnail(user.displayAvatarURL())
-      .addFields(
-        { name: "👤 Kullanıcı", value: user.username, inline: false },
-        { name: "👛 Cüzdan", value: `${cüzdan.toLocaleString()} €`, inline: true },
-        { name: "🏦 Banka", value: `${banka.toLocaleString()} €`, inline: true },
-        { name: "💰 Toplam", value: `${toplam.toLocaleString()} €`, inline: false }
-      )
-      .setFooter({ text: "Ekonomi Sistemi" })
-      .setTimestamp();
-
-    return message.reply({ embeds: [embed] });
+    message.reply(`💰 Cüzdan: ${para}\n🏦 Banka: ${banka}`);
   }
 
-  // =========================
   // 💸 PARA EKLE (TEST)
-  // =========================
-  if (cmd === "paraekle") {
+  if (cmd === "ekle") {
     let miktar = Number(args[0]);
     if (!miktar) return message.reply("Miktar gir!");
 
-    db.add(`money_${message.author.id}`, miktar);
-    message.reply(`${miktar} € eklendi!`);
+    db.add(`para_${message.author.id}`, miktar);
+    message.reply(`${miktar} eklendi 💰`);
   }
 
-  // =========================
   // 🏦 BANKAYA YATIR
-  // =========================
   if (cmd === "yatir") {
     let miktar = Number(args[0]);
     if (!miktar) return message.reply("Miktar gir!");
 
-    let para = db.get(`money_${message.author.id}`) || 0;
-    if (para < miktar) return message.reply("Yeterli paran yok!");
+    let para = db.get(`para_${message.author.id}`) || 0;
+    if (para < miktar) return message.reply("Yetersiz para!");
 
-    db.subtract(`money_${message.author.id}`, miktar);
+    db.subtract(`para_${message.author.id}`, miktar);
     db.add(`bank_${message.author.id}`, miktar);
 
-    message.reply(`${miktar} € bankaya yatırıldı!`);
+    message.reply(`${miktar} bankaya yatırıldı 🏦`);
   }
 
-  // =========================
-  // 💰 BANKADAN ÇEK
-  // =========================
-  if (cmd === "çek") {
+  // 💳 BANKADAN ÇEK
+  if (cmd === "cek") {
     let miktar = Number(args[0]);
     if (!miktar) return message.reply("Miktar gir!");
 
     let banka = db.get(`bank_${message.author.id}`) || 0;
-    if (banka < miktar) return message.reply("Bankada yeterli para yok!");
+    if (banka < miktar) return message.reply("Bankada para yok!");
 
     db.subtract(`bank_${message.author.id}`, miktar);
-    db.add(`money_${message.author.id}`, miktar);
+    db.add(`para_${message.author.id}`, miktar);
 
-    message.reply(`${miktar} € çekildi!`);
+    message.reply(`${miktar} çekildi 💸`);
   }
 
-  // =========================
-  // 💤 AFK
-  // =========================
+  // 😴 AFK
   if (cmd === "afk") {
     let sebep = args.join(" ") || "Sebep yok";
     db.set(`afk_${message.author.id}`, sebep);
-    message.reply("AFK oldun!");
+    message.reply("AFK oldun 💤");
+  }
+});
+
+// AFK GERİ DÖNÜŞ
+client.on("messageCreate", (message) => {
+  if (message.author.bot) return;
+
+  let afk = db.get(`afk_${message.author.id}`);
+  if (afk) {
+    db.delete(`afk_${message.author.id}`);
+    message.reply("AFK'dan döndün!");
   }
 
+  message.mentions.users.forEach((user) => {
+    let sebep = db.get(`afk_${user.id}`);
+    if (sebep) {
+      message.reply(`${user.tag} AFK: ${sebep}`);
+    }
+  });
 });
 console.log("TOKEN:", process.env.TOKEN);
 client.login(process.env.TOKEN);
